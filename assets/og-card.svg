@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <radialGradient id="bg" cx="0.5" cy="-0.1" r="1.1">
+      <stop offset="0%"  stop-color="#16213e"/>
+      <stop offset="42%" stop-color="#0d1326"/>
+      <stop offset="100%" stop-color="#0a0a0f"/>
+    </radialGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0.4">
+      <stop offset="0%"  stop-color="#00FFFF"/>
+      <stop offset="38%" stop-color="#bd93f9"/>
+      <stop offset="70%" stop-color="#50fa7b"/>
+      <stop offset="100%" stop-color="#00FFFF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- starfield dots -->
+  <g fill="#ffffff">
+    <circle cx="120" cy="90"  r="2" opacity="0.8"/>
+    <circle cx="300" cy="60"  r="1.5" opacity="0.5"/>
+    <circle cx="520" cy="110" r="2" fill="#00FFFF" opacity="0.7"/>
+    <circle cx="900" cy="80"  r="2" fill="#50fa7b" opacity="0.7"/>
+    <circle cx="1080" cy="140" r="1.5" opacity="0.5"/>
+    <circle cx="1000" cy="40" r="1.5" fill="#bd93f9" opacity="0.7"/>
+    <circle cx="700" cy="50"  r="1.5" opacity="0.5"/>
+    <circle cx="180" cy="520" r="2" fill="#bd93f9" opacity="0.6"/>
+    <circle cx="1100" cy="560" r="2" fill="#00FFFF" opacity="0.6"/>
+    <circle cx="60" cy="300"  r="1.5" opacity="0.5"/>
+  </g>
+
+  <!-- brand line -->
+  <text x="80" y="120" font-family="monospace" font-size="26" fill="#00FFFF">🐧</text>
+  <text x="120" y="120" font-family="monospace" font-size="24" font-weight="700" fill="#ffffff" letter-spacing="1">
+    <tspan fill="#00FFFF">sk</tspan>_pqc · SKWorld quantum-resistance
+  </text>
+
+  <!-- suite pill -->
+  <g>
+    <rect x="80" y="160" width="320" height="40" rx="20" fill="rgba(0,255,255,0.06)" stroke="#00FFFF" stroke-opacity="0.4" stroke-width="1.5"/>
+    <text x="100" y="187" font-family="monospace" font-size="20" fill="#00FFFF" font-weight="600">suite: x25519-mlkem768</text>
+  </g>
+
+  <!-- big title -->
+  <text x="76" y="330" font-family="sans-serif" font-size="150" font-weight="800" fill="url(#title)" letter-spacing="-4">sk_pqc</text>
+
+  <!-- tagline -->
+  <text x="80" y="398" font-family="sans-serif" font-size="33" fill="#ffffff" font-weight="600">Hybrid post-quantum key encapsulation for Dart &amp; Flutter.</text>
+
+  <!-- combiner formula -->
+  <g font-family="monospace" font-size="27" font-weight="600">
+    <text x="80" y="462" fill="#50fa7b">X25519</text>
+    <text x="210" y="462" fill="rgba(255,255,255,0.45)">+</text>
+    <text x="238" y="462" fill="#bd93f9">ML-KEM-768</text>
+    <text x="455" y="462" fill="rgba(255,255,255,0.45)">→</text>
+    <text x="497" y="462" fill="#00FFFF">HKDF-SHA256</text>
+    <text x="745" y="462" fill="rgba(255,255,255,0.45)">→</text>
+    <text x="787" y="462" fill="#FFD700">32-byte ss</text>
+  </g>
+
+  <!-- honest line -->
+  <text x="80" y="512" font-family="sans-serif" font-size="22" fill="rgba(255,255,255,0.7)">Secure if either leg holds · KEM-only · FIPS 203 · Apache-2.0</text>
+
+  <!-- url badge -->
+  <g transform="translate(80, 552)">
+    <rect x="0" y="0" width="330" height="44" rx="22" fill="#0d1326" stroke="#00FFFF" stroke-opacity="0.45" stroke-width="2"/>
+    <text x="22" y="30" font-family="monospace" font-size="20" fill="#00FFFF" font-weight="600">→ skpqc.skworld.io</text>
+  </g>
+
+  <!-- backend chips (right side) -->
+  <g font-family="monospace" font-size="18" font-weight="700">
+    <g transform="translate(900,250)">
+      <rect width="220" height="38" rx="8" fill="rgba(80,250,123,0.08)" stroke="#50fa7b" stroke-opacity="0.4"/>
+      <text x="16" y="25" fill="#50fa7b">native · liboqs</text>
+    </g>
+    <g transform="translate(900,300)">
+      <rect width="220" height="38" rx="8" fill="rgba(189,147,249,0.1)" stroke="#bd93f9" stroke-opacity="0.4"/>
+      <text x="16" y="25" fill="#bd93f9">web · noble-pq</text>
+    </g>
+    <g transform="translate(900,350)">
+      <rect width="220" height="38" rx="8" fill="rgba(0,255,255,0.08)" stroke="#00FFFF" stroke-opacity="0.4"/>
+      <text x="16" y="25" fill="#00FFFF">pub · 1216 B</text>
+    </g>
+    <g transform="translate(900,400)">
+      <rect width="220" height="38" rx="8" fill="rgba(255,215,0,0.1)" stroke="#FFD700" stroke-opacity="0.4"/>
+      <text x="16" y="25" fill="#FFD700">ct · 1120 B</text>
+    </g>
+  </g>
+</svg>

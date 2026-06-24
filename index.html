@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>sk_pqc — Hybrid Post-Quantum Key Encapsulation for Dart &amp; Flutter</title>
+  <meta name="description" content="sk_pqc — a hybrid post-quantum KEM for Dart and Flutter. X25519 + ML-KEM-768 (FIPS 203), one API across web and native, secure if either leg holds. KEM-only, Apache-2.0.">
+
+  <link rel="canonical" href="https://skpqc.skworld.io/">
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="sk_pqc — Hybrid Post-Quantum Key Encapsulation for Dart &amp; Flutter">
+  <meta property="og:description" content="X25519 + ML-KEM-768 (FIPS 203), one Dart API across web and native. Secure if either leg holds. KEM-only · the only original crypto is the HKDF combiner · Apache-2.0.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://skpqc.skworld.io/">
+  <meta property="og:site_name" content="sk_pqc · SKWorld">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="https://skpqc.skworld.io/assets/og-card.png">
+  <meta property="og:image:secure_url" content="https://skpqc.skworld.io/assets/og-card.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="sk_pqc — hybrid X25519 + ML-KEM-768 KEM for Dart & Flutter.">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@smilinTux">
+  <meta name="twitter:title" content="sk_pqc — Hybrid Post-Quantum Key Encapsulation for Dart &amp; Flutter">
+  <meta name="twitter:description" content="X25519 + ML-KEM-768 (FIPS 203), one Dart API, web + native. Secure if either leg holds. KEM-only. Apache-2.0.">
+  <meta name="twitter:image" content="https://skpqc.skworld.io/assets/og-card.png">
+  <meta name="twitter:image:alt" content="sk_pqc — hybrid post-quantum key encapsulation">
+  <meta name="twitter:creator" content="@smilinTux">
+
+  <!-- Theme -->
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="robots" content="index, follow">
+
+  <!-- Favicon: inline-SVG lock -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔐</text></svg>">
+
+  <!-- Schema.org JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://smilintux.github.io/#organization",
+        "name": "smilinTux",
+        "url": "https://smilintux.github.io",
+        "sameAs": ["https://github.com/smilinTux"],
+        "description": "Sovereign AI infrastructure — building open, authentic, human-first technology. Home of the Pengu Empire.",
+        "foundingDate": "2024",
+        "knowsAbout": ["Post-quantum cryptography", "ML-KEM", "X25519", "Hybrid key encapsulation", "FIPS 203", "Dart", "Flutter", "Sovereign AI"]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://skpqc.skworld.io/#website",
+        "name": "sk_pqc",
+        "url": "https://skpqc.skworld.io",
+        "publisher": {"@id": "https://smilintux.github.io/#organization"},
+        "inLanguage": "en-US"
+      },
+      {
+        "@type": "SoftwareSourceCode",
+        "@id": "https://skpqc.skworld.io/#app",
+        "name": "sk_pqc",
+        "alternateName": "Hybrid post-quantum key encapsulation for Dart & Flutter",
+        "description": "sk_pqc is a hybrid post-quantum key encapsulation mechanism (KEM) for Dart and Flutter. It combines X25519 with FIPS 203 ML-KEM-768 (suite x25519-mlkem768) under one Dart API across web (noble-post-quantum) and native (liboqs via FFI) backends. The derived secret is secure if either leg holds. KEM-only; the only original cryptographic code is the HKDF-SHA256 combiner.",
+        "url": "https://skpqc.skworld.io",
+        "programmingLanguage": "Dart",
+        "license": "https://www.apache.org/licenses/LICENSE-2.0",
+        "codeRepository": "https://github.com/smilinTux/sk_pqc",
+        "keywords": "post-quantum, ML-KEM-768, X25519, hybrid KEM, FIPS 203, Dart, Flutter",
+        "isPartOf": {"@type": "SoftwareApplication", "name": "SKWorld", "url": "https://skworld.io"},
+        "publisher": {"@id": "https://smilintux.github.io/#organization"}
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    /* ── Reset + tokens ───────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    :root {
+      --gold:   #FFD700;
+      --pink:   #FF69B4;
+      --cyan:   #00FFFF;
+      --green:  #50fa7b;
+      --amber:  #f59e0b;
+      --purple: #bd93f9;
+      --bg:     #0a0a0f;
+      --bg2:    #0f1020;
+      --card:   rgba(15, 16, 40, 0.7);
+      --border: rgba(0,255,255,0.15);
+      --text:   rgba(255,255,255,0.88);
+      --dim:    rgba(255,255,255,0.55);
+      --mono:   'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      overflow-x: hidden;
+    }
+
+    /* ── Starfield background ─────────────── */
+    .starfield {
+      position: fixed; inset: 0; z-index: -1;
+      background: radial-gradient(ellipse at 50% -10%, #16213e 0%, #0d1326 40%, #0a0a0f 100%);
+    }
+    .stars {
+      position: absolute; inset: 0;
+      background-image:
+        radial-gradient(2px 2px at 20px 30px,  rgba(0,255,255,0.9),  transparent),
+        radial-gradient(2px 2px at 40px 70px,  rgba(189,147,249,0.7),transparent),
+        radial-gradient(1px 1px at 90px 40px,  rgba(255,255,255,0.9),transparent),
+        radial-gradient(1px 1px at 130px 80px, rgba(80,250,123,0.8), transparent),
+        radial-gradient(2px 2px at 160px 30px, rgba(255,255,255,0.6),transparent),
+        radial-gradient(1px 1px at 70px 55px,  rgba(0,255,255,0.7),  transparent);
+      background-repeat: repeat;
+      background-size: 200px 100px;
+      animation: starscroll 100s linear infinite;
+    }
+    .stars:nth-child(2) { background-size: 270px 130px; animation-duration: 145s; animation-direction: reverse; opacity: .7; }
+    .stars:nth-child(3) { background-size: 340px 165px; animation-duration: 190s; opacity: .45; }
+    @keyframes starscroll {
+      from { transform: translateX(0)      translateY(0); }
+      to   { transform: translateX(-200px) translateY(-100px); }
+    }
+
+    /* ── Floating deco ────────────────────── */
+    .float-deco {
+      position: fixed; font-size: 1.6rem; z-index: 0; pointer-events: none;
+      animation: floatDeco 18s infinite ease-in-out;
+      opacity: .3;
+    }
+    @keyframes floatDeco {
+      0%,100% { transform: translateY(0) rotate(-4deg); opacity: .25; }
+      33%  { transform: translateY(-28px) rotate(6deg); opacity: .5; }
+      66%  { transform: translateY(-48px) rotate(-2deg); opacity: .4; }
+    }
+
+    /* ── Layout helpers ───────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 1; }
+    section { padding: 5rem 0; }
+
+    /* ── Sticky nav ───────────────────────── */
+    .site-nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(10, 10, 20, 0.88);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(0,255,255,0.12);
+    }
+    .nav-inner {
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 1100px; margin: 0 auto; padding: .75rem 2rem;
+    }
+    .nav-logo {
+      font-family: var(--mono); font-weight: 700; font-size: 1.25rem;
+      color: var(--cyan); text-decoration: none; letter-spacing: -.5px;
+    }
+    .nav-logo span { color: var(--purple); }
+    .nav-links { display: flex; list-style: none; gap: 1.4rem; align-items: center; }
+    .nav-links a {
+      color: var(--dim); text-decoration: none; font-size: .875rem;
+      font-weight: 500; transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--cyan); }
+    .nav-cta {
+      background: linear-gradient(135deg, var(--cyan), var(--purple));
+      color: #000 !important; padding: .45rem 1.2rem; border-radius: 6px;
+      font-weight: 700 !important; font-size: .85rem !important;
+    }
+    .nav-cta:hover { opacity: .85; }
+    @media (max-width: 920px) { .nav-links { display: none; } }
+
+    /* ── HERO ─────────────────────────────── */
+    .hero { padding: 7rem 0 4rem; text-align: center; position: relative; }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 50%, rgba(0,255,255,.07) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      font-family: var(--mono); font-size: .9rem; color: var(--cyan);
+      letter-spacing: .15em; text-transform: uppercase; margin-bottom: 1.5rem;
+      display: inline-block;
+      animation: eyebrowPulse 4s ease-in-out infinite;
+    }
+    @keyframes eyebrowPulse {
+      0%,100% { text-shadow: 0 0 8px rgba(0,255,255,.4); }
+      50%      { text-shadow: 0 0 18px rgba(0,255,255,.8), 0 0 35px rgba(0,255,255,.3); }
+    }
+    .hero-title {
+      font-family: var(--mono);
+      font-size: clamp(3rem, 8vw, 6.5rem);
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -2px;
+      margin-bottom: .9rem;
+      background: linear-gradient(140deg, var(--cyan) 0%, var(--purple) 40%, var(--green) 75%, var(--cyan) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: titleShimmer 5s ease-in-out infinite;
+    }
+    @keyframes titleShimmer {
+      0%,100% { filter: hue-rotate(0deg); }
+      40%      { filter: hue-rotate(20deg); }
+      70%      { filter: hue-rotate(-12deg); }
+    }
+    .hero-suite {
+      display: inline-block; font-family: var(--mono); font-size: .8rem;
+      color: var(--cyan); border: 1px solid rgba(0,255,255,.3);
+      border-radius: 20px; padding: .25rem .9rem; margin-bottom: 1.4rem;
+      background: rgba(0,255,255,.05);
+    }
+    .hero-tagline {
+      font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+      color: rgba(255,255,255,.82);
+      font-weight: 300;
+      max-width: 780px;
+      margin: 0 auto 1rem;
+      line-height: 1.5;
+    }
+    .hero-tagline strong { color: var(--cyan); font-weight: 600; }
+    .hero-sub { font-size: 1rem; color: var(--dim); max-width: 640px; margin: 0 auto 2rem; }
+    .hero-pipeline {
+      display: inline-flex; align-items: center; gap: .55rem; flex-wrap: wrap;
+      font-family: var(--mono); font-size: .95rem;
+      background: rgba(0,0,0,.5); border: 1.5px solid rgba(0,255,255,.3);
+      border-radius: 12px; padding: .8rem 1.4rem; margin-bottom: 2.5rem;
+    }
+    .hero-pipeline .pp-a    { color: var(--green); font-weight: 600; }
+    .hero-pipeline .pp-b    { color: var(--purple); font-weight: 600; }
+    .hero-pipeline .pp-kdf  { color: var(--cyan); font-weight: 600; }
+    .hero-pipeline .pp-ss   { color: var(--gold); font-weight: 600; }
+    .hero-pipeline .pp-op   { color: var(--dim); }
+
+    /* Hero CTAs */
+    .hero-ctas { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-top: .5rem; }
+    .btn {
+      display: inline-flex; align-items: center; gap: .45rem;
+      padding: .8rem 1.8rem; border-radius: 10px;
+      font-weight: 600; font-size: .95rem; text-decoration: none;
+      transition: all .25s; position: relative; overflow: hidden;
+      border: none; cursor: pointer;
+    }
+    .btn::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
+      transform: translateX(-100%); transition: transform .5s;
+    }
+    .btn:hover::after { transform: translateX(100%); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 60%);
+      color: #000;
+      box-shadow: 0 4px 20px rgba(0,255,255,.35);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,255,255,.5); }
+    .btn-outline {
+      background: rgba(255,255,255,.04);
+      border: 1.5px solid rgba(189,147,249,.4);
+      color: rgba(255,255,255,.85);
+    }
+    .btn-outline:hover { border-color: var(--purple); background: rgba(189,147,249,.07); transform: translateY(-2px); }
+    .btn-ghost {
+      background: transparent; border: 1.5px solid rgba(255,255,255,.15); color: var(--dim);
+    }
+    .btn-ghost:hover { border-color: var(--cyan); color: var(--cyan); transform: translateY(-2px); }
+
+    /* Trust badges */
+    .hero-trust {
+      display: flex; justify-content: center; gap: 2rem;
+      flex-wrap: wrap; margin-top: 3rem; font-size: .82rem; color: var(--dim);
+    }
+    .hero-trust span { display: flex; align-items: center; gap: .4rem; }
+    .hero-trust strong { color: rgba(255,255,255,.72); }
+
+    /* ── Section helpers ──────────────────── */
+    .section-eyebrow {
+      font-family: var(--mono); font-size: .8rem; color: var(--cyan);
+      letter-spacing: .15em; text-transform: uppercase; margin-bottom: .75rem;
+    }
+    .section-title { font-size: clamp(1.9rem, 3.5vw, 2.7rem); font-weight: 800; margin-bottom: .75rem; line-height: 1.15; }
+    .section-sub { color: var(--dim); max-width: 680px; font-size: 1.02rem; line-height: 1.75; }
+    .section-divider { border: none; border-top: 1px solid rgba(0,255,255,.08); margin: 0; }
+    .gradient-section {
+      background: linear-gradient(135deg, rgba(0,255,255,.04) 0%, rgba(189,147,249,.04) 50%, rgba(80,250,123,.03) 100%);
+      border-top: 1px solid rgba(0,255,255,.08);
+      border-bottom: 1px solid rgba(0,255,255,.08);
+    }
+
+    /* ── Prose + lists ───────────────────── */
+    .prose { max-width: 760px; margin-top: 1.75rem; }
+    .prose p { margin-bottom: 1.1rem; color: rgba(255,255,255,.78); }
+    .prose strong { color: #fff; }
+    .prose code, code.inline {
+      font-family: var(--mono); font-size: .85em;
+      background: rgba(0,255,255,.08); border: 1px solid rgba(0,255,255,.2);
+      color: var(--cyan); border-radius: 5px; padding: .08em .4em;
+    }
+    .feature-list { list-style: none; margin-top: 1.5rem; display: grid; gap: 1rem; }
+    .feature-list li {
+      display: flex; gap: .85rem; align-items: flex-start;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.1rem 1.25rem; backdrop-filter: blur(12px);
+    }
+    .feature-list .fl-icon { font-size: 1.3rem; flex-shrink: 0; line-height: 1.3; }
+    .feature-list .fl-body { font-size: .95rem; color: rgba(255,255,255,.8); line-height: 1.6; }
+    .feature-list .fl-body strong { color: #fff; }
+
+    /* ── Honesty box ─────────────────────── */
+    .honesty-box {
+      max-width: 820px; margin: 2rem 0 0;
+      background: linear-gradient(135deg, rgba(245,158,11,.07), rgba(255,105,180,.04));
+      border: 1.5px solid rgba(245,158,11,.4);
+      border-radius: 16px; padding: 1.75rem 2rem; backdrop-filter: blur(12px);
+    }
+    .honesty-box h3 { font-size: 1.1rem; color: var(--amber); margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; }
+    .honesty-box ul { list-style: none; display: grid; gap: .75rem; }
+    .honesty-box li { font-size: .92rem; color: rgba(255,255,255,.8); line-height: 1.6; padding-left: 1.4rem; position: relative; }
+    .honesty-box li::before { content: '·'; position: absolute; left: .4rem; color: var(--amber); font-weight: 700; }
+    .honesty-box strong { color: #fff; }
+
+    /* ── Code blocks ─────────────────────── */
+    .code-card {
+      background: rgba(5,6,18,.85); border: 1.5px solid rgba(0,255,255,.22);
+      border-radius: 14px; overflow: hidden; margin-top: 1.5rem; backdrop-filter: blur(12px);
+    }
+    .code-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .65rem 1.1rem; border-bottom: 1px solid rgba(0,255,255,.12);
+      background: rgba(0,255,255,.04);
+    }
+    .code-head .ch-dots { display: flex; gap: .4rem; }
+    .code-head .ch-dots i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+    .code-head .ch-dots i:nth-child(1) { background: #ff5f56; }
+    .code-head .ch-dots i:nth-child(2) { background: #ffbd2e; }
+    .code-head .ch-dots i:nth-child(3) { background: #27c93f; }
+    .code-head .ch-file { font-family: var(--mono); font-size: .78rem; color: var(--dim); }
+    .code-card pre {
+      margin: 0; padding: 1.25rem 1.4rem; overflow-x: auto;
+      font-family: var(--mono); font-size: .85rem; line-height: 1.7; color: rgba(255,255,255,.9);
+    }
+    .code-card .cm  { color: var(--dim); }       /* comment */
+    .code-card .kw  { color: var(--purple); }    /* keyword */
+    .code-card .fn  { color: var(--cyan); }      /* fn / type */
+    .code-card .st  { color: var(--green); }     /* string */
+
+    /* ── Diagram ─────────────────────────── */
+    .diagram-wrap { margin-top: 2rem; display: flex; justify-content: center; }
+    .diagram-wrap svg { max-width: 100%; height: auto; }
+
+    /* ── Wire format table ───────────────── */
+    .wire-table { width: 100%; border-collapse: collapse; margin-top: 1.75rem; font-size: .9rem; }
+    .wire-table th, .wire-table td {
+      text-align: left; padding: .85rem 1rem; border-bottom: 1px solid rgba(0,255,255,.1);
+    }
+    .wire-table thead th {
+      font-family: var(--mono); font-size: .72rem; text-transform: uppercase; letter-spacing: .08em;
+      color: var(--cyan); border-bottom: 1px solid rgba(0,255,255,.25);
+    }
+    .wire-table td.el { font-weight: 700; color: #fff; }
+    .wire-table td.layout { font-family: var(--mono); font-size: .8rem; color: var(--dim); }
+    .wire-table td.bytes { font-family: var(--mono); font-weight: 700; color: var(--gold); text-align: right; }
+    .wire-table tbody tr:hover { background: rgba(0,255,255,.03); }
+
+    /* ── Backend / verified grids ────────── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2rem; }
+    @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } }
+    .panel {
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 16px; padding: 1.75rem; backdrop-filter: blur(12px);
+      transition: all .3s; position: relative; overflow: hidden;
+    }
+    .panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .panel.native::before { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+    .panel.web::before    { background: linear-gradient(90deg, var(--purple), var(--pink)); }
+    .panel:hover { transform: translateY(-4px); box-shadow: 0 18px 45px rgba(0,0,0,.4); border-color: rgba(0,255,255,.35); }
+    .panel h3 { font-family: var(--mono); font-size: 1.15rem; color: #fff; margin-bottom: .35rem; }
+    .panel h3 span { color: var(--cyan); }
+    .panel .panel-tag { font-family: var(--mono); font-size: .72rem; color: var(--dim); margin-bottom: .9rem; display: block; }
+    .panel p { font-size: .9rem; color: rgba(255,255,255,.75); line-height: 1.65; margin-bottom: .75rem; }
+    .panel a { color: var(--cyan); text-decoration: none; border-bottom: 1px dashed rgba(0,255,255,.4); }
+    .panel a:hover { color: var(--green); }
+
+    .verified-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; margin-top: 2rem; }
+    .vc {
+      background: var(--card); border: 1.5px solid rgba(80,250,123,.25);
+      border-radius: 14px; padding: 1.4rem; backdrop-filter: blur(12px);
+    }
+    .vc .vc-check { color: var(--green); font-weight: 700; font-family: var(--mono); font-size: .8rem; }
+    .vc h4 { font-size: 1rem; color: #fff; margin: .4rem 0; }
+    .vc p { font-size: .85rem; color: var(--dim); line-height: 1.55; }
+
+    /* ── Ecosystem ───────────────────────── */
+    .eco-grid { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-top: 2rem; }
+    .eco-link {
+      display: inline-flex; align-items: center; gap: .45rem;
+      background: rgba(255,255,255,.04); border: 1px solid rgba(0,255,255,.18);
+      border-radius: 24px; padding: .55rem 1.2rem;
+      font-size: .875rem; font-weight: 500;
+      color: rgba(255,255,255,.75); text-decoration: none; transition: all .25s;
+    }
+    .eco-link:hover { border-color: var(--cyan); color: var(--cyan); background: rgba(0,255,255,.07); transform: translateY(-2px); }
+
+    /* ── Footer ──────────────────────────── */
+    .site-footer { padding: 2.5rem 0; border-top: 1px solid rgba(0,255,255,.12); background: rgba(0,0,0,.4); }
+    .footer-inner { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+    .footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem 1.5rem; }
+    .footer-links a { color: var(--dim); text-decoration: none; font-size: .875rem; transition: color .2s; }
+    .footer-links a:hover { color: var(--cyan); }
+    .footer-copy { font-family: var(--mono); font-size: .8rem; color: rgba(255,255,255,.3); text-align: center; }
+    .footer-copy span { color: var(--cyan); }
+
+    /* ── Responsive ──────────────────────── */
+    @media (max-width: 640px) {
+      section { padding: 3.5rem 0; }
+      .container { padding: 0 1rem; }
+      .hero { padding: 4.5rem 0 3rem; }
+      .hero-trust { gap: 1rem; }
+    }
+
+    /* ── Scroll reveal ───────────────────── */
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity .6s ease, transform .6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+  <!-- Starfield -->
+  <div class="starfield" aria-hidden="true">
+    <div class="stars"></div>
+    <div class="stars"></div>
+    <div class="stars"></div>
+  </div>
+
+  <!-- Floating decorations -->
+  <div class="float-deco" style="top:18%;left:4%;animation-delay:0s">🔐</div>
+  <div class="float-deco" style="top:35%;right:5%;animation-delay:4s">🐧</div>
+  <div class="float-deco" style="top:65%;left:2.5%;animation-delay:8s">🧬</div>
+  <div class="float-deco" style="top:80%;right:9%;animation-delay:6s">🔑</div>
+
+  <!-- ── NAV ───────────────────────────────── -->
+  <nav class="site-nav" role="navigation" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="https://skpqc.skworld.io/" class="nav-logo">🔐 <span>sk</span>_pqc</a>
+      <ul class="nav-links">
+        <li><a href="#what">What it is</a></li>
+        <li><a href="#why">Why now</a></li>
+        <li><a href="#quickstart">Quick start</a></li>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#verified">Verified</a></li>
+        <li><a href="https://skworld.io">SKWorld</a></li>
+        <li><a href="https://github.com/smilinTux/sk_pqc" class="nav-cta" target="_blank" rel="noopener">GitHub ↗</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── HERO ──────────────────────────────── -->
+  <header class="hero" id="top">
+    <div class="container">
+      <div class="hero-eyebrow">SKWorld quantum-resistance initiative</div>
+
+      <h1 class="hero-title">sk_pqc</h1>
+      <div class="hero-suite">suite: x25519-mlkem768</div>
+
+      <p class="hero-tagline">
+        <strong>Hybrid post-quantum key encapsulation for Dart &amp; Flutter.</strong><br>
+        X25519 + ML-KEM-768 (FIPS 203), one API across web and native.
+      </p>
+
+      <p class="hero-sub">
+        A hybrid KEM whose derived secret is secure if <em>either</em> the classical or the
+        post-quantum leg holds. The same construction as TLS <code class="inline">X25519MLKEM768</code> and Signal PQXDH.
+      </p>
+
+      <div class="hero-pipeline" role="img" aria-label="X25519 plus ML-KEM-768 combined via HKDF-SHA256 into a 32-byte shared secret">
+        <span class="pp-a">X25519</span>
+        <span class="pp-op">+</span>
+        <span class="pp-b">ML-KEM-768</span>
+        <span class="pp-op">→</span>
+        <span class="pp-kdf">HKDF-SHA256</span>
+        <span class="pp-op">→</span>
+        <span class="pp-ss">32-byte ss</span>
+      </div>
+
+      <div class="hero-ctas">
+        <a href="https://github.com/smilinTux/sk_pqc" class="btn btn-primary" target="_blank" rel="noopener">⭐ GitHub repo</a>
+        <a href="#quickstart" class="btn btn-outline">⚡ Quick start</a>
+        <a href="#how" class="btn btn-ghost">🧬 How it works</a>
+      </div>
+
+      <div class="hero-trust" role="list" aria-label="Key properties">
+        <span role="listitem"><span aria-hidden="true">🛡️</span> <strong>Secure if either leg holds</strong></span>
+        <span role="listitem"><span aria-hidden="true">🌐</span> <strong>Web + native</strong> · one Dart API</span>
+        <span role="listitem"><span aria-hidden="true">📐</span> <strong>FIPS 203</strong> · ML-KEM-768 tier</span>
+        <span role="listitem"><span aria-hidden="true">📜</span> <strong>Apache-2.0</strong> · open</span>
+      </div>
+    </div>
+  </header>
+
+  <hr class="section-divider">
+
+  <!-- ── WHAT IT IS ────────────────────────── -->
+  <section id="what" aria-labelledby="what-heading">
+    <div class="container">
+      <div class="section-eyebrow">What it is</div>
+      <h2 class="section-title" id="what-heading">A hybrid KEM — not a replacement for classical crypto</h2>
+      <p class="section-sub">
+        sk_pqc is a <strong>hybrid key encapsulation mechanism</strong>. We never implement the lattice or
+        curve primitives ourselves — every cryptographic leg binds an audited library. The
+        <strong>only original cryptographic code is the HKDF combiner</strong> that fuses the two shared secrets.
+      </p>
+
+      <ul class="feature-list reveal">
+        <li>
+          <span class="fl-icon">🛡️</span>
+          <span class="fl-body"><strong>Belt-and-suspenders security.</strong> The derived secret is secure if <em>either</em>
+          X25519 <em>or</em> ML-KEM-768 holds. A post-quantum break falls back to classical X25519;
+          a quantum break of X25519 still leaves ML-KEM-768. We combine, never replace.</span>
+        </li>
+        <li>
+          <span class="fl-icon">🔑</span>
+          <span class="fl-body"><strong>KEM-only.</strong> This package establishes shared secrets — it does
+          <em>not</em> authenticate anything by itself. Signatures (ML-DSA / SLH-DSA) are <strong>future work</strong>;
+          pair sk_pqc with a signature scheme for authenticated key exchange.</span>
+        </li>
+        <li>
+          <span class="fl-icon">📐</span>
+          <span class="fl-body"><strong>FIPS 203, ML-KEM-768 tier.</strong> The internet default (the same level as TLS
+          and Signal). It is <em>not</em> the CNSA-2.0 ceiling — that would be ML-KEM-1024.</span>
+        </li>
+        <li>
+          <span class="fl-icon">🧱</span>
+          <span class="fl-body"><strong>Bound to audited libs.</strong> The post-quantum leg is
+          <a href="https://github.com/paulmillr/noble-post-quantum" style="color:var(--cyan)">noble-post-quantum</a> on web
+          and <a href="https://github.com/open-quantum-safe/liboqs" style="color:var(--cyan)">liboqs</a> via FFI on native.
+          X25519 is <code>package:cryptography</code>. HKDF is RFC 5869.</span>
+        </li>
+      </ul>
+
+      <div class="honesty-box reveal">
+        <h3>⚠️ Honest claims — read this</h3>
+        <ul>
+          <li>This is <strong>not</strong> "quantum-proof," "unbreakable," or "quantum-safe." Lattice
+            cryptography is young. The defensible words are <strong>"post-quantum"</strong> / <strong>"quantum-resistant."</strong></li>
+          <li>The <strong>web</strong> backend's assurance depends on <code>@noble/post-quantum</code> (audited pure-JS);
+            the <strong>native</strong> backend's depends on <code>liboqs</code>. sk_pqc trusts those libraries — it does not re-implement them.</li>
+          <li><strong>Hybrid means belt-and-suspenders</strong>, not magic: it hedges the (real) risk that one
+            primitive falls, but it inherits the assurance of whichever library you run.</li>
+          <li>The only cryptography we wrote is the <strong>HKDF-SHA256 combiner</strong>, a standard KDF
+            construction verified against RFC 5869 known answers.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── WHY NOW ───────────────────────────── -->
+  <section id="why" class="gradient-section" aria-labelledby="why-heading">
+    <div class="container">
+      <div class="section-eyebrow">Why now</div>
+      <h2 class="section-title" id="why-heading">Harvest now, decrypt later</h2>
+      <div class="prose reveal">
+        <p>
+          A large-scale quantum computer does not exist today — but an adversary does not need one
+          <em>today</em> to threaten data sent <em>today</em>. They can <strong>capture encrypted traffic now</strong>
+          and store it, waiting for a cryptographically-relevant quantum computer to decrypt it
+          <strong>years later</strong>. Anything with a long secrecy lifetime — identity keys, archives,
+          medical or financial records, sovereign comms — is exposed the moment it crosses a wire.
+        </p>
+        <p>
+          That is why migration is a <strong>now</strong> problem, not a future one. And it is why the
+          responsible first step is <strong>hybrid</strong>: you keep the battle-tested classical curve
+          (X25519) <em>and</em> add a post-quantum lattice KEM (ML-KEM-768) alongside it. If the young
+          lattice scheme has a flaw, you are no worse than classical. If a quantum computer arrives,
+          the post-quantum leg has you covered. <strong>You lose nothing and you hedge everything.</strong>
+        </p>
+        <p>
+          This is exactly the path the standards bodies took: TLS 1.3 ships
+          <code>X25519MLKEM768</code>, and Signal's PQXDH uses the same hybrid shape. sk_pqc brings
+          that construction to Dart and Flutter, so a phone app and a web app can speak it identically.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── QUICK START ───────────────────────── -->
+  <section id="quickstart" aria-labelledby="qs-heading">
+    <div class="container">
+      <div class="section-eyebrow">Quick start</div>
+      <h2 class="section-title" id="qs-heading">Generate → encapsulate → decapsulate</h2>
+      <p class="section-sub">
+        Pub.dev publishing is pending — for now, depend on it directly from GitHub. The API is the same either way.
+      </p>
+
+      <div class="code-card reveal">
+        <div class="code-head">
+          <div class="ch-dots"><i></i><i></i><i></i></div>
+          <span class="ch-file">pubspec.yaml — depend from GitHub (pub.dev publish pending)</span>
+        </div>
+<pre><span class="cm"># Once published you'll be able to: dart pub add sk_pqc</span>
+<span class="cm"># Until then, depend on the repo directly:</span>
+<span class="fn">dependencies</span>:
+  <span class="fn">sk_pqc</span>:
+    <span class="fn">git</span>:
+      <span class="fn">url</span>: <span class="st">https://github.com/smilinTux/sk_pqc.git</span></pre>
+      </div>
+
+      <div class="code-card reveal">
+        <div class="code-head">
+          <div class="ch-dots"><i></i><i></i><i></i></div>
+          <span class="ch-file">example.dart — minimal usage</span>
+        </div>
+<pre><span class="kw">import</span> <span class="st">'package:sk_pqc/sk_pqc.dart'</span>;
+
+<span class="kw">final</span> kem  = <span class="fn">HybridKemImpl</span>();                <span class="cm">// backend auto-selected (web/native)</span>
+<span class="kw">final</span> keys = <span class="kw">await</span> kem.<span class="fn">generateKeyPair</span>();   <span class="cm">// publish keys.publicKey (1216 B)</span>
+
+<span class="cm">// Sender encapsulates to the recipient's public key:</span>
+<span class="kw">final</span> enc  = <span class="kw">await</span> kem.<span class="fn">encapsulate</span>(keys.publicKey);
+<span class="cm">// enc.ciphertext (1120 B) goes on the wire; enc.sharedSecret stays local</span>
+
+<span class="cm">// Recipient recovers the same 32-byte secret from the ciphertext:</span>
+<span class="kw">final</span> ss   = <span class="kw">await</span> kem.<span class="fn">decapsulate</span>(enc.ciphertext, keys.privateKey);
+<span class="cm">// ss == enc.sharedSecret  → use it as an AES-256-GCM / ChaCha20 key</span></pre>
+      </div>
+
+      <p class="section-sub" style="margin-top:1.5rem">
+        Errors throw <code class="inline">SkPqcError</code> rather than crashing. A tampered ML-KEM ciphertext does
+        not error — ML-KEM uses <em>implicit rejection</em>, so decapsulation simply yields a secret that won't match.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── HOW IT WORKS ──────────────────────── -->
+  <section id="how" class="gradient-section" aria-labelledby="how-heading">
+    <div class="container">
+      <div class="section-eyebrow">How it works</div>
+      <h2 class="section-title" id="how-heading">One combiner, two legs, fixed wire format</h2>
+      <p class="section-sub">
+        Both legs run independently and produce a shared secret each. We concatenate those two
+        secrets (X25519 first) and run a single HKDF-SHA256 to derive the final 32-byte key.
+        <strong>Concatenate-then-KDF. Never XOR. Never pure-PQ.</strong>
+      </p>
+
+      <!-- Inline static diagram -->
+      <div class="diagram-wrap reveal" aria-hidden="true">
+        <svg viewBox="0 0 920 300" width="920" role="img" aria-label="X25519 shared secret and ML-KEM-768 shared secret are concatenated and fed into HKDF-SHA256 to produce a 32-byte shared secret">
+          <defs>
+            <style>
+              .b  { fill: rgba(15,16,40,0.85); stroke-width: 1.6; }
+              .lg { fill: rgba(80,250,123,0.08); stroke: #50fa7b; }
+              .lp { fill: rgba(189,147,249,0.10); stroke: #bd93f9; }
+              .lc { fill: rgba(0,255,255,0.08);  stroke: #00FFFF; }
+              .lo { fill: rgba(255,215,0,0.10);  stroke: #FFD700; }
+              .t  { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+              .ts { font-family: 'JetBrains Mono', monospace; }
+              .ar { stroke: rgba(255,255,255,0.35); stroke-width: 2; fill: none; }
+            </style>
+            <marker id="ah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="rgba(255,255,255,0.45)"/>
+            </marker>
+          </defs>
+
+          <!-- X25519 leg -->
+          <rect class="b lg" x="20" y="30" width="240" height="70" rx="12"/>
+          <text class="t" x="140" y="62" text-anchor="middle" fill="#50fa7b" font-size="19">X25519 (DHKEM)</text>
+          <text class="ts" x="140" y="85" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="13">ephemeral-static → ss₁</text>
+
+          <!-- ML-KEM leg -->
+          <rect class="b lp" x="20" y="200" width="240" height="70" rx="12"/>
+          <text class="t" x="140" y="232" text-anchor="middle" fill="#bd93f9" font-size="19">ML-KEM-768</text>
+          <text class="ts" x="140" y="255" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="13">FIPS 203 encaps → ss₂</text>
+
+          <!-- concat node -->
+          <rect class="b lc" x="360" y="115" width="170" height="70" rx="12"/>
+          <text class="t" x="445" y="147" text-anchor="middle" fill="#00FFFF" font-size="17">concat</text>
+          <text class="ts" x="445" y="170" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="13">ss₁ ‖ ss₂</text>
+
+          <!-- HKDF node -->
+          <rect class="b lc" x="570" y="115" width="180" height="70" rx="12"/>
+          <text class="t" x="660" y="147" text-anchor="middle" fill="#00FFFF" font-size="17">HKDF-SHA256</text>
+          <text class="ts" x="660" y="170" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="12">salt, info, L=32</text>
+
+          <!-- output -->
+          <rect class="b lo" x="790" y="115" width="110" height="70" rx="12"/>
+          <text class="t" x="845" y="147" text-anchor="middle" fill="#FFD700" font-size="16">shared</text>
+          <text class="t" x="845" y="168" text-anchor="middle" fill="#FFD700" font-size="16">secret · 32B</text>
+
+          <!-- arrows -->
+          <path class="ar" d="M260,65 C310,65 320,135 358,135" marker-end="url(#ah)"/>
+          <path class="ar" d="M260,235 C310,235 320,165 358,165" marker-end="url(#ah)"/>
+          <path class="ar" d="M530,150 L566,150" marker-end="url(#ah)"/>
+          <path class="ar" d="M750,150 L786,150" marker-end="url(#ah)"/>
+        </svg>
+      </div>
+
+      <p class="section-sub" style="margin-top:1.5rem">
+        <code class="inline">salt</code> defaults to empty; <code class="inline">info</code> defaults to
+        <code class="inline">sk_pqc/x25519-mlkem768/v1</code> (pass a context label for domain separation).
+        X25519 acts as a KEM via ephemeral-static Diffie–Hellman (DHKEM, as in HPKE / TLS): the encapsulator
+        ships a fresh 32-byte ephemeral public key as the X25519 "ciphertext."
+      </p>
+
+      <!-- Wire format table -->
+      <h3 style="font-size:1.2rem;margin-top:2.5rem;color:#fff">Wire format — the interop contract</h3>
+      <p class="section-sub" style="margin-top:.5rem">
+        Every element is the byte concatenation of the X25519 part followed by the ML-KEM-768 part.
+        These lengths are fixed and MUST NOT change.
+      </p>
+      <div style="overflow-x:auto">
+        <table class="wire-table reveal">
+          <thead>
+            <tr><th>Element</th><th>Layout</th><th style="text-align:right">Bytes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="el">public key</td>  <td class="layout">X25519_pub (32) ‖ MLKEM768_pub (1184)</td>      <td class="bytes">1216</td></tr>
+            <tr><td class="el">private key</td> <td class="layout">X25519_priv_seed (32) ‖ MLKEM768_secret (2400)</td><td class="bytes">2432</td></tr>
+            <tr><td class="el">ciphertext</td>  <td class="layout">X25519_ephemeral_pub (32) ‖ MLKEM768_ct (1088)</td><td class="bytes">1120</td></tr>
+            <tr><td class="el">shared secret</td><td class="layout">HKDF-SHA256( X25519_ss ‖ MLKEM768_ss )</td>        <td class="bytes">32</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Backends -->
+      <h3 style="font-size:1.2rem;margin-top:2.5rem;color:#fff">Two backends, one API</h3>
+      <p class="section-sub" style="margin-top:.5rem">
+        Selected by conditional import: <code class="inline">if (dart.library.ffi) … else if (dart.library.js_interop) …</code>
+      </p>
+      <div class="two-col">
+        <div class="panel native reveal">
+          <h3><span>native</span> · dart:ffi → liboqs</h3>
+          <span class="panel-tag">desktop / mobile</span>
+          <p>The ML-KEM-768 leg binds <a href="https://github.com/open-quantum-safe/liboqs" target="_blank" rel="noopener">liboqs</a>'
+            <code class="inline">OQS_KEM</code> API; X25519 is <code class="inline">package:cryptography</code>.
+            You provide the liboqs shared library at runtime (via <code class="inline">SK_PQC_LIBOQS</code> or platform default paths).</p>
+          <p>v1 proves the FFI path on Linux desktop (liboqs 0.14.0). Per-arch binaries for
+            Android / iOS / macOS / Windows are a CI follow-up.</p>
+        </div>
+        <div class="panel web reveal">
+          <h3><span>web</span> · dart:js_interop → noble</h3>
+          <span class="panel-tag">browser / dart2js</span>
+          <p>The ML-KEM-768 leg binds <a href="https://github.com/paulmillr/noble-post-quantum" target="_blank" rel="noopener">@noble/post-quantum</a>'s
+            <code class="inline">ml_kem768</code> (audited pure-JS); X25519 is <code class="inline">package:cryptography</code>.</p>
+          <p>WebCrypto has no PQC API in any browser (2026), so the JS dep is exposed via
+            <code class="inline">globalThis.skPqc</code> — a ready bootstrap ships at
+            <code class="inline">web/sk_pqc_noble_bootstrap.js</code>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── VERIFIED ──────────────────────────── -->
+  <section id="verified" aria-labelledby="verified-heading">
+    <div class="container">
+      <div class="section-eyebrow">Verified</div>
+      <h2 class="section-title" id="verified-heading">Anchored to known answers, cross-checked across implementations</h2>
+      <p class="section-sub">
+        A machine-readable interop vector lives at
+        <code class="inline">test_vectors/hybrid_kem_x25519_mlkem768.json</code>: given the private key and
+        ciphertext, every conformant implementation MUST recover the same shared secret.
+      </p>
+
+      <div class="verified-grid">
+        <div class="vc reveal">
+          <span class="vc-check">✅ FIPS 203 KAT</span>
+          <h4>ML-KEM-768 known answer</h4>
+          <p>The ML-KEM leg keypair is derived from the NIST ACVP FIPS 203 keyGen seed (d ‖ z, tcId 26),
+            anchoring it to an official known-answer test.</p>
+        </div>
+        <div class="vc reveal">
+          <span class="vc-check">✅ RFC 5869 KAT</span>
+          <h4>HKDF-SHA256 combiner</h4>
+          <p>The combiner is verified against RFC 5869 §A.1 known answers, plus hand-computed values,
+            salt/info domain-separation, and wrong-length rejection.</p>
+        </div>
+        <div class="vc reveal">
+          <span class="vc-check">✅ cross-backend</span>
+          <h4>web ↔ native agree</h4>
+          <p>A keypair/encapsulation from the web lib (noble) decapsulates under the native lib (liboqs)
+            and vice-versa — both decapsulate the shared interop vector identically.</p>
+        </div>
+        <div class="vc reveal">
+          <span class="vc-check">✅ Dart ↔ Python</span>
+          <h4>cross-language interop vector</h4>
+          <p>The same vector is re-derived in Python (pyca X25519 + liboqs-python + HKDF-SHA256)
+            and asserted equal — the contract Dart and Python must both satisfy.</p>
+        </div>
+      </div>
+
+      <p class="section-sub" style="margin-top:2rem">
+        <strong>Status honesty:</strong> the combiner and the Linux-desktop FFI path are tested and proven;
+        the web path compiles under dart2js and is cross-checked against liboqs. Per-arch native binaries
+        (Android / iOS / macOS / Windows) are a CI follow-up, and signatures are out of scope.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── ECOSYSTEM ─────────────────────────── -->
+  <section id="ecosystem" class="gradient-section" aria-labelledby="eco-heading">
+    <div class="container" style="text-align:center">
+      <div class="section-eyebrow">Part of the SKWorld quantum-resistance initiative</div>
+      <h2 class="section-title" id="eco-heading">Sovereign crypto, built in the open</h2>
+      <p class="section-sub" style="margin:0 auto">
+        sk_pqc is one piece of SKWorld — sovereign AI infrastructure built on open, auditable
+        cryptography. Apache-2.0, no rented clouds, your hardware and your keys.
+      </p>
+      <div class="eco-grid">
+        <a href="https://skworld.io" class="eco-link">🌍 skworld.io — the hub</a>
+        <a href="https://github.com/smilinTux/sk_pqc" class="eco-link" target="_blank" rel="noopener">📦 sk_pqc on GitHub ↗</a>
+        <a href="https://www.apache.org/licenses/LICENSE-2.0" class="eco-link" target="_blank" rel="noopener">📜 Apache-2.0</a>
+        <a href="https://sksecurity.skworld.io" class="eco-link">🛡️ sksecurity — perimeter</a>
+        <a href="https://capauth.skworld.io" class="eco-link">🔐 capauth — identity</a>
+        <a href="https://github.com/smilinTux" class="eco-link" target="_blank" rel="noopener">📂 All repos ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ────────────────────────────── -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <a href="https://skpqc.skworld.io/" class="nav-logo" style="font-size:1.1rem">🔐 <span>sk</span>_pqc</a>
+        <nav class="footer-links" aria-label="Footer navigation">
+          <a href="https://github.com/smilinTux/sk_pqc" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/smilinTux/sk_pqc#readme" target="_blank" rel="noopener">README</a>
+          <a href="https://github.com/smilinTux/sk_pqc/blob/main/test_vectors/hybrid_kem_x25519_mlkem768.json" target="_blank" rel="noopener">Interop vector</a>
+          <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener">License</a>
+          <a href="https://skworld.io">SKWorld</a>
+          <a href="/sitemap.xml">Sitemap</a>
+        </nav>
+        <p class="footer-copy">
+          🐧 part of the SKWorld ecosystem · <span><a href="https://skworld.io" style="color:var(--cyan);text-decoration:none">skworld.io</a></span><br>
+          &copy; 2026 smilinTux · Apache-2.0 · post-quantum, not "quantum-proof" · built in the open
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Scroll-reveal
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  </script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+# sk_pqc
+
+> Hybrid post-quantum key encapsulation for Dart & Flutter. X25519 + ML-KEM-768
+> (FIPS 203), one Dart API across web and native backends. Suite id:
+> x25519-mlkem768 — the same construction as TLS X25519MLKEM768 and Signal PQXDH.
+
+sk_pqc is a hybrid Key Encapsulation Mechanism (KEM). It establishes a 32-byte
+shared secret that is secure if EITHER the classical leg (X25519) OR the
+post-quantum leg (ML-KEM-768) holds. It does not replace classical crypto; it
+combines the two.
+
+## Honest scope (do not overclaim)
+
+- It is a hybrid KEM, secure if either leg holds — not "quantum-proof" or
+  "unbreakable." Defensible words: "post-quantum" / "quantum-resistant."
+- It is KEM-only. Signatures (ML-DSA / SLH-DSA) are future work. It does not
+  authenticate anything by itself.
+- It targets the FIPS 203 ML-KEM-768 tier (the internet default), NOT the
+  CNSA-2.0 ceiling (ML-KEM-1024).
+- The ONLY original cryptographic code is the HKDF-SHA256 combiner. Every
+  primitive binds an audited library: noble-post-quantum (web), liboqs (native),
+  package:cryptography (X25519), RFC 5869 HKDF.
+- Web-leg assurance depends on @noble/post-quantum; native-leg on liboqs.
+
+## The combiner (the only crypto we wrote)
+
+shared_secret = HKDF-SHA256( IKM = X25519_ss || MLKEM768_ss, salt, info, L=32 )
+X25519 part first. salt defaults empty. info defaults sk_pqc/x25519-mlkem768/v1.
+Concatenate-then-KDF. Never XOR. Never pure-PQ.
+
+## Wire format (fixed lengths)
+
+- public key:    X25519_pub(32) || MLKEM768_pub(1184)        = 1216 bytes
+- private key:   X25519_priv_seed(32) || MLKEM768_secret(2400)= 2432 bytes
+- ciphertext:    X25519_ephemeral_pub(32) || MLKEM768_ct(1088)= 1120 bytes
+- shared secret: HKDF-SHA256(...)                             = 32 bytes
+
+## API
+
+import 'package:sk_pqc/sk_pqc.dart';
+final kem  = HybridKemImpl();                  // backend auto-selected
+final keys = await kem.generateKeyPair();
+final enc  = await kem.encapsulate(keys.publicKey);
+final ss   = await kem.decapsulate(enc.ciphertext, keys.privateKey);
+
+## Verified
+
+- FIPS 203 KAT (ML-KEM-768, NIST ACVP keyGen seed d||z, tcId 26)
+- RFC 5869 §A.1 KAT (HKDF combiner)
+- cross-backend: web (noble) <-> native (liboqs) agree
+- Dart <-> Python interop vector (pyca + liboqs-python + HKDF-SHA256)
+
+## Links
+
+- Site: https://skpqc.skworld.io
+- Source: https://github.com/smilinTux/sk_pqc
+- License: Apache-2.0
+- Ecosystem: https://skworld.io (SKWorld quantum-resistance initiative)
+
+## Status
+
+- Hybrid combiner (HKDF-SHA256): tested vs RFC 5869 + vectors
+- Native FFI (liboqs) ML-KEM-768: runs on Linux desktop
+- Web (noble) ML-KEM-768: compiles under dart2js, cross-checked vs liboqs
+- Per-arch native binaries (Android/iOS/mac/Win): CI follow-up
+- Signatures (ML-DSA / SLH-DSA): out of scope (future)
+- pub.dev publish: pending (depend from GitHub for now)
