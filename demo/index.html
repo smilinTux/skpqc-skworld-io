@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>sk_pqc — live hybrid KEM in your browser (WASM demo)</title>
+<meta name="description" content="A live, in-browser demo of the sk_pqc hybrid X25519 + ML-KEM-768 key-encapsulation. The pure-Rust core compiled to WebAssembly runs a full KEM round-trip locally in your browser — keygen, encapsulate, decapsulate, plus a DM-ratchet key. Post-quantum, never 'quantum-proof'; hybrid means secure if either leg holds.">
+<meta name="keywords" content="post-quantum cryptography demo, ML-KEM, X25519, hybrid KEM, FIPS 203, WebAssembly, WASM crypto, sk_pqc, in-browser KEM">
+<link rel="canonical" href="https://skpqc.skworld.io/demo/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://skpqc.skworld.io/demo/">
+<meta property="og:title" content="sk_pqc — live hybrid KEM in your browser (WASM demo)">
+<meta property="og:description" content="The pure-Rust sk_pqc hybrid X25519 + ML-KEM-768 core compiled to WebAssembly. Runs a full KEM round-trip locally in your browser. Post-quantum, never 'quantum-proof'.">
+<meta property="og:image" content="https://skpqc.skworld.io/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="sk_pqc · SKWorld">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@smilinTux">
+<meta name="twitter:title" content="sk_pqc — live hybrid KEM in your browser">
+<meta name="twitter:description" content="Hybrid X25519 + ML-KEM-768 compiled to WASM, running a full KEM round-trip locally in your browser. Post-quantum, never 'quantum-proof'.">
+<meta name="twitter:image" content="https://skpqc.skworld.io/og-image.png">
+
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%E2%9A%9B%EF%B8%8F</text></svg>">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="demo.css">
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand"><a href="../" style="color:inherit"><span class="glyph">⚛️</span> sk_pqc</a></div>
+    <nav>
+      <a href="../">Home</a>
+      <a href="../#interop">Interop</a>
+      <a href="../#matrix">Matrix</a>
+      <a href="../#threat">Threat model</a>
+      <a href="https://github.com/smilinTux/sk-pqc-rs">GitHub</a>
+    </nav>
+  </div>
+
+  <header class="hero">
+    <span class="eyebrow">SKWorld · Live WASM Demo · Apache-2.0</span>
+    <h1>The hybrid KEM, live in your browser</h1>
+    <p class="sub">The pure-Rust <strong>sk-pqc</strong> core, compiled to <strong>WebAssembly</strong> — running a full <strong>X25519 + ML-KEM-768</strong> key-encapsulation round-trip <em>locally, in this tab</em>. No server. No upload. Your browser does the lattice math.</p>
+  </header>
+
+  <div class="banner">
+    <span class="ico">⚠️</span>
+    <div><strong>Runs locally in your browser.</strong> Every byte below — keygen, encapsulation, decapsulation — is computed in WebAssembly on your machine; nothing is sent anywhere. Randomness comes from your browser's <code>crypto.getRandomValues</code>. This is a <strong>hybrid</strong> scheme: the derived secret holds as long as <em>either</em> the classical X25519 leg <em>or</em> the ML-KEM-768 (FIPS&nbsp;203) leg holds. It is <strong>post-quantum</strong>, <em>never</em> "quantum-proof", "quantum-safe", or "unbreakable". Experimental &amp; unaudited.</div>
+  </div>
+
+  <!-- DEMO CONTROL -->
+  <section id="demo">
+    <h2>Hybrid KEM round-trip <span class="tick">— Alice ⇄ Bob, in WASM</span></h2>
+    <p class="lead">Alice generates a hybrid keypair. Bob encapsulates a fresh shared secret to her public key. Alice decapsulates it. Both sides must derive the <strong>identical</strong> 32-byte secret — then a wrong-key negative control, and a DM-ratchet message-key derivation.</p>
+
+    <div class="demo-controls">
+      <button id="run" class="run-btn">▶ Run hybrid KEM round-trip</button>
+      <span id="status" class="run-status">loading WebAssembly…</span>
+    </div>
+
+    <div class="terminal">
+      <div class="term-head">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="term-title">sk_pqc_wasm · wasm32-unknown-unknown</span>
+      </div>
+      <pre id="out" class="term-body">initialising…</pre>
+    </div>
+
+    <div class="facts">
+      <div class="fact"><div class="n">1216 B</div><div class="l">hybrid public key<br>(X25519 32 ‖ ML-KEM ek 1184)</div></div>
+      <div class="fact"><div class="n">1120 B</div><div class="l">ciphertext<br>(X25519 eph 32 ‖ ML-KEM ct 1088)</div></div>
+      <div class="fact"><div class="n">32 B</div><div class="l">shared secret<br>HKDF-SHA256 combiner</div></div>
+      <div class="fact"><div class="n" id="wasm-kb">…</div><div class="l">WASM payload<br>opt-level "s" + wasm-opt</div></div>
+    </div>
+  </section>
+
+  <!-- WHAT HAPPENED -->
+  <section id="how">
+    <h2>What just ran <span class="tick">— the honest version</span></h2>
+    <div class="claims">
+      <div class="claim is">
+        <h3>What this demo proves</h3>
+        <ul>
+          <li>The <strong>same pure-Rust core</strong> on PyPI / pub.dev / crates.io compiles unchanged to <code>wasm32</code> and runs in a browser</li>
+          <li>A real <strong>hybrid KEM</strong>: X25519 (RFC 7748) + ML-KEM-768 (FIPS 203), combined with HKDF-SHA256 — concatenate-then-KDF, never XOR</li>
+          <li>Round-trip <strong>agreement</strong>: encapsulator and decapsulator independently derive the same 32-byte secret</li>
+          <li><strong>Implicit rejection</strong>: a wrong private key yields a non-matching secret, not a usable one</li>
+          <li>The <strong>DM epoch ratchet</strong> derives deterministic, index-separated per-message keys off one epoch secret</li>
+        </ul>
+      </div>
+      <div class="claim isnt">
+        <h3>What it does <em>not</em> claim</h3>
+        <ul>
+          <li><strong>Not "quantum-proof"</strong> — the defensible word is <em>post-quantum</em>; hybrid = secure if <em>either</em> leg holds</li>
+          <li><strong>Not authentication</strong> — this is a KEM; it does not prove <em>who</em> Bob is (signatures are future work, FIPS 204)</li>
+          <li><strong>Not audited</strong> — research-grade wiring over vetted primitives (<code>ml-kem</code>, <code>x25519-dalek</code>); no third-party review yet</li>
+          <li><strong>Not a benchmark</strong> — a browser/WASM run is illustrative, not a timing claim</li>
+          <li><strong>Not endpoint security</strong> — it protects a key exchange, not a compromised device or a bad RNG</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRY IT IN CODE -->
+  <section id="code">
+    <h2>The same thing, in your stack</h2>
+    <p class="lead">This is exactly the API the demo calls — the WASM exports map one-to-one onto the published packages. Same construction, same wire bytes, three ecosystems.</p>
+    <pre class="code"><span class="c">// the WASM glue this page imports (pkg/sk_pqc_wasm.js)</span>
+<span class="k">import</span> init, { hybrid_keypair, hybrid_encap, hybrid_decap, suite_id }
+  <span class="k">from</span> <span class="s">'./pkg/sk_pqc_wasm.js'</span>;
+<span class="k">await</span> init();
+<span class="k">const</span> alice = hybrid_keypair();          <span class="c">// 1216-byte pub / 2432-byte priv</span>
+<span class="k">const</span> enc   = hybrid_encap(alice.public_key); <span class="c">// enc.ciphertext (1120), enc.shared_secret (32)</span>
+<span class="k">const</span> ss    = hybrid_decap(enc.ciphertext, alice.private_key); <span class="c">// === enc.shared_secret</span></pre>
+    <pre class="code"><span class="c"># Python — pip install sk-pqc</span>
+<span class="k">import</span> sk_pqc
+pk, sk = sk_pqc.generate_keypair()
+ct, ss = sk_pqc.encapsulate(pk)
+ss2    = sk_pqc.decapsulate(sk, ct)        <span class="c"># ss == ss2</span></pre>
+    <p class="lead" style="margin-top:1rem">Build the WASM yourself from <a href="https://github.com/smilinTux/sk-pqc-rs">sk-pqc-rs</a>: <code>cd wasm &amp;&amp; wasm-pack build --release --target web --out-dir pkg</code>.</p>
+  </section>
+
+  <footer>
+    <p><strong>sk_pqc</strong> · Apache-2.0 · part of <a href="https://skworld.io/">SKWorld</a> sovereign infrastructure</p>
+    <p>Built by Chef (David) &amp; Lumina · <a href="../">skpqc.skworld.io</a> · <a href="https://github.com/smilinTux/sk-pqc-rs">sk-pqc-rs</a></p>
+    <p class="small">This demo runs entirely in your browser via WebAssembly. Experimental &amp; unaudited. Post-quantum, never "quantum-proof." Hybrid = secure if either leg holds.</p>
+  </footer>
+
+</div>
+
+<script type="module">
+import init, {
+  hybrid_keypair, hybrid_encap, hybrid_decap, derive_dm_message_key, suite_id
+} from './pkg/sk_pqc_wasm.js';
+
+const out    = document.getElementById('out');
+const status = document.getElementById('status');
+const btn    = document.getElementById('run');
+
+const hex  = (u8) => Array.from(u8, b => b.toString(16).padStart(2, '0')).join('');
+const trunc = (h, n = 32) => h.length > n ? h.slice(0, n) + '…' + h.slice(-8) : h;
+const eq   = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+const esc  = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+let ready = false;
+
+async function ensureInit() {
+  if (ready) return;
+  await init();
+  ready = true;
+}
+
+async function run() {
+  btn.disabled = true;
+  const lines = [];
+  const log = (s) => { lines.push(s); out.innerHTML = lines.join('\n'); };
+  try {
+    status.textContent = 'running…';
+    await ensureInit();
+
+    log(`<span class="c"># sk_pqc hybrid KEM — executing in WebAssembly, locally</span>`);
+    log(`<span class="lbl">suite</span>       ${esc(suite_id())}`);
+    log('');
+
+    // 1. Alice keypair
+    const alice = hybrid_keypair();
+    const pub = alice.public_key, priv = alice.private_key;
+    log(`<span class="step">1.</span> Alice generates a hybrid keypair`);
+    log(`<span class="lbl">  public</span>    ${pub.length} B  <span class="c">X25519 32 ‖ ML-KEM-768 ek 1184</span>`);
+    log(`<span class="lbl">  private</span>   ${priv.length} B  <span class="c">X25519 seed 32 ‖ ML-KEM-768 dk 2400</span>`);
+    log('');
+
+    // 2. Bob encapsulates
+    const enc = hybrid_encap(pub);
+    const ct = enc.ciphertext, bobSS = enc.shared_secret;
+    log(`<span class="step">2.</span> Bob encapsulates to Alice's public key`);
+    log(`<span class="lbl">  ct</span>        ${ct.length} B  <span class="c">X25519 eph 32 ‖ ML-KEM-768 ct 1088</span>`);
+    log(`<span class="lbl">  Bob ss</span>    <span class="hexv">${trunc(hex(bobSS))}</span>  <span class="c">(${bobSS.length} B)</span>`);
+    log('');
+
+    // 3. Alice decapsulates
+    const aliceSS = hybrid_decap(ct, priv);
+    log(`<span class="step">3.</span> Alice decapsulates`);
+    log(`<span class="lbl">  Alice ss</span>  <span class="hexv">${trunc(hex(aliceSS))}</span>  <span class="c">(${aliceSS.length} B)</span>`);
+    log('');
+
+    const match = eq(Array.from(bobSS), Array.from(aliceSS));
+    log(match
+      ? `<span class="ok">✔ HYBRID KEM ROUND-TRIP OK</span> — both sides derived the SAME 32-byte secret.`
+      : `<span class="bad">✗ MISMATCH</span> — secrets differ (this should never happen).`);
+    log('');
+
+    // 4. Negative control
+    const mallory = hybrid_keypair();
+    const mSS = hybrid_decap(ct, mallory.private_key);
+    log(`<span class="step">4.</span> Negative control — a different private key`);
+    log(eq(Array.from(bobSS), Array.from(mSS))
+      ? `<span class="bad">✗ negative control FAILED</span> — wrong key still matched.`
+      : `<span class="ok">✔ negative control OK</span> — wrong key yields a non-matching secret (ML-KEM implicit rejection).`);
+    log('');
+
+    // 5. DM ratchet
+    const epochSecret = aliceSS;
+    const k5  = derive_dm_message_key(epochSecret, 2n, 5n);
+    const k5b = derive_dm_message_key(epochSecret, 2n, 5n);
+    const k6  = derive_dm_message_key(epochSecret, 2n, 6n);
+    log(`<span class="step">5.</span> DM epoch-ratchet message keys`);
+    log(`<span class="lbl">  e2/i5</span>     <span class="hexv">${trunc(hex(k5))}</span>`);
+    log(eq(Array.from(k5), Array.from(k5b))
+      ? `<span class="ok">  ✔ deterministic</span> — same (epoch,index) ⇒ same key.`
+      : `<span class="bad">  ✗</span> non-deterministic.`);
+    log(eq(Array.from(k5), Array.from(k6))
+      ? `<span class="bad">  ✗</span> different index gave the same key.`
+      : `<span class="ok">  ✔ index-separated</span> — index 5 ≠ index 6.`);
+    log('');
+    log(`<span class="c"># done — all crypto executed locally in your browser via WebAssembly.</span>`);
+
+    status.textContent = match ? '✔ round-trip verified' : '✗ failed';
+  } catch (e) {
+    log(`<span class="bad">ERROR:</span> ${esc(String(e))}`);
+    status.textContent = '✗ error';
+    btn.disabled = false;
+    throw e;
+  }
+  btn.disabled = false;
+}
+
+btn.addEventListener('click', run);
+
+// preload wasm + report size, then auto-run once
+(async () => {
+  try {
+    await ensureInit();
+    status.textContent = 'ready — click Run';
+    out.textContent = 'WebAssembly loaded. Click “Run” (auto-running once below)…';
+    // report wasm payload size
+    let kb = '118 KB';
+    try {
+      const r = await fetch('./pkg/sk_pqc_wasm_bg.wasm', { method: 'HEAD' });
+      const len = Number(r.headers.get('content-length') || 0);
+      if (len) kb = Math.round(len / 1024) + ' KB';
+    } catch (_) {}
+    document.getElementById('wasm-kb').textContent = kb;
+    run();
+  } catch (e) {
+    status.textContent = '✗ failed to load WASM';
+    out.innerHTML = `<span class="bad">Failed to initialise WebAssembly:</span> ${esc(String(e))}`;
+  }
+})();
+</script>
+</body>
+</html>
