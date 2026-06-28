@@ -50,6 +50,53 @@ final ss   = await kem.decapsulate(enc.ciphertext, keys.privateKey);
 - cross-backend: web (noble) <-> native (liboqs) agree
 - Dart <-> Python interop vector (pyca + liboqs-python + HKDF-SHA256)
 
+## Interop matrix (Python / Dart / Rust)
+
+KEM and DM epoch ratchet are wire-verified in ALL THREE languages against one
+shared cross-implementation KAT. Higher-layer primitives (group ratchet, PQ
+message seal/pqdm, pqroute routing envelope, anon_queue addressing, suite
+registry + honest self-report) are implemented and Python<->Rust parity-tested
+today, and reach Dart via the single Rust core over FFI (in progress). A check
+means a passing parity test, not a plan. Cross-node proven: web(noble) <->
+native(liboqs) agree; the Rust PyO3 wheel <-> pure-Python sk_pqc decapsulate
+each other both directions; skchat/skcomms negotiate hybrid PQ DMs in-browser
+(verified end-to-end over CDP).
+
+## Benchmarks (reproduce on your own hardware)
+
+Whole hybrid-KEM operation (X25519 leg + ML-KEM-768 leg + HKDF combiner), via
+examples/bench.py (timeit, 500 iters x 5, median), Python 3.12 / Linux x86-64,
+no GPU:
+- keygen ~226 us (mean 279) ~4,400 ops/sec
+- encap  ~360 us (mean 512) ~2,800 ops/sec
+- decap  ~341 us (mean 416) ~2,900 ops/sec
+Sub-millisecond; ML-KEM-768 leg dominates. Paid once per ratchet epoch, not per
+message. Run: python examples/bench.py [iters].
+
+## Single core, many bindings (write the crypto once)
+
+Direction is ONE audited pure-Rust core (sk-pqc-rs: ml-kem + x25519-dalek, no
+OpenSSL, no liboqs; 9 modules, 99 in-tree tests) surfaced over FFI:
+- Python via PyO3 (abi3 wheel): PROVEN — cross-parity-tested vs pure-Python
+  sk_pqc, both directions.
+- Dart via flutter_rust_bridge: IN PROGRESS — today's Dart ratchet is a thin,
+  clearly-marked bridge pinned to the same KAT, slated to become a shim over the
+  core. PyO3 feature is off by default so cargo test stays pure-Rust and
+  crates.io stays dependency-clean.
+
+## Threat model / HNDL
+
+Built against harvest-now-decrypt-later (HNDL). The -768 hybrid PROTECTS:
+recorded-traffic confidentiality (breaking X25519 later still leaves ML-KEM-768),
+classical-break-today (lattice surprise still leaves X25519), forward secrecy
+across ratchet epochs; AES-256-GCM is Grover-only and already acceptable. It
+does NOT: authenticate (KEM only; FIPS 204 ML-DSA signatures gated as future
+work; active MITM out of scope for the KEM alone), reach CNSA-2.0 (deliberately
+-768, not -1024), fix HNDL for a classical-only ratchet, or substitute for a
+third-party audit (none yet) or endpoint security. Hybrid = confidential as long
+as EITHER leg holds. Never "quantum-proof"/"quantum-safe"/"unbreakable" — the
+report module mechanically rejects those words.
+
 ## Links
 
 - Site: https://skpqc.skworld.io

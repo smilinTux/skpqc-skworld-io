@@ -61,9 +61,11 @@
     <nav>
       <a href="#install">Install</a>
       <a href="#interop">Interop</a>
-      <a href="#honest">What it is</a>
+      <a href="#matrix">Matrix</a>
+      <a href="#bench">Bench</a>
+      <a href="#core">Core</a>
+      <a href="#threat">Threat model</a>
       <a href="#use">Use it</a>
-      <a href="https://skresearch.skworld.io/papers/sovereign-post-quantum-messaging/">Paper</a>
       <a href="https://github.com/smilinTux/sk-pqc-py">GitHub</a>
     </nav>
   </div>
@@ -133,6 +135,127 @@
     <p class="lead" style="margin-top:1.2rem">A message encapsulated by the Python package opens in the Dart app and the Rust service, byte for byte — the same hybrid construction that ships in TLS 1.3's <code>X25519MLKEM768</code> and Signal's PQXDH, so the security argument inherits theirs. The web Dart backend even negotiates this <strong>in the browser</strong>, where no WebCrypto PQC API exists.</p>
   </section>
 
+  <!-- INTEROP MATRIX -->
+  <section id="matrix">
+    <h2>The interop matrix <span class="tick">— what speaks what, honestly</span></h2>
+    <p class="lead">The KEM and the DM ratchet are <strong>wire-verified in all three languages</strong> against one shared cross-implementation vector. The higher-layer primitives (group ratchet, message seal, routing envelope, anonymous addressing) live in Python and Rust today and reach Dart over the single Rust core — see <a href="#core">below</a>. No row is aspirational: a ✓ means there is a passing parity test, not a plan.</p>
+    <div class="matrix-wrap">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th style="text-align:center">🐍 Python</th>
+            <th style="text-align:center">🎯 Dart</th>
+            <th style="text-align:center">🦀 Rust</th>
+            <th>Cross-impl proof</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="cap">Hybrid KEM<small><code>x25519-mlkem768</code> · 1216 / 1120 / 32 B</small></td>
+            <td class="mark"><span class="yes">✓</span></td>
+            <td class="mark"><span class="yes">✓</span></td>
+            <td class="mark"><span class="yes">✓</span></td>
+            <td>FIPS 203 ACVP keyGen vector; ct sealed by any impl decaps on the others, both directions</td>
+          </tr>
+          <tr>
+            <td class="cap">DM epoch ratchet<small><code>derive_dm_message_key</code> · 50-msg / 7-day rekey</small></td>
+            <td class="mark"><span class="yes">✓</span></td>
+            <td class="mark"><span class="yes">✓<small style="font-weight:400">bridge</small></span></td>
+            <td class="mark"><span class="yes">✓</span></td>
+            <td>Same KAT (epoch/index → 32-byte key) matches byte-for-byte across all three</td>
+          </tr>
+          <tr>
+            <td class="cap">Group epoch ratchet<small>per-member hybrid-wrapped epoch secret</small></td>
+            <td class="mark"><span class="yes">✓</span></td>
+            <td class="mark"><span class="soon">→ core</span></td>
+            <td class="mark"><span class="yes">✓</span></td>
+            <td>Python ↔ Rust parity vector (<code>group_ratchet</code>)</td>
+          </tr>
+          <tr>
+            <td class="cap">PQ message seal<small>PQXDH-style wrap + downgrade-lock AAD</small></td>
+            <td class="mark"><span class="yes">✓</span></td>
+            <td class="mark"><span class="soon">→ core</span></td>
+            <td class="mark"><span class="yes">✓</span></td>
+            <td>Python ↔ Rust: canonical-JSON AAD, <code>pqdm1:</code> tokens</td>
+          </tr>
+          <tr>
+            <td class="cap">Routing envelope<small><code>pqroute1</code> relay-readable header + sealed inner</small></td>
+            <td class="mark"><span class="yes">✓</span></td>
+            <td class="mark"><span class="soon">→ core</span></td>
+            <td class="mark"><span class="yes">✓</span></td>
+            <td>Python ↔ Rust: route-header AAD parity</td>
+          </tr>
+          <tr>
+            <td class="cap">Anon queue addressing<small><code>aqid:</code> codec + deniable HMAC tag</small></td>
+            <td class="mark"><span class="yes">✓</span></td>
+            <td class="mark"><span class="soon">→ core</span></td>
+            <td class="mark"><span class="yes">✓</span></td>
+            <td>Python ↔ Rust: address codec parity</td>
+          </tr>
+          <tr>
+            <td class="cap">Suite registry + self-report<small>crypto-agility seam + honesty gate</small></td>
+            <td class="mark"><span class="yes">✓</span></td>
+            <td class="mark"><span class="soon">→ core</span></td>
+            <td class="mark"><span class="yes">✓</span></td>
+            <td>Rust pins the exact Python report byte-string as a vector</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span><b class="yes">✓</b> implemented &amp; parity-tested</span>
+      <span><b class="yes">bridge</b> thin Dart port, validated against the same KAT, slated to fold into the Rust core</span>
+      <span><b class="soon">→ core</b> reaches Dart via the single Rust core over FFI (in progress)</span>
+    </div>
+    <p class="lead" style="margin-top:1.2rem"><strong>Cross-node, not just cross-language.</strong> The same bytes have been proven on the wire between live nodes: web (noble) ↔ native (liboqs) agree, the Rust PyO3 wheel ↔ pure-Python <code>sk_pqc</code> decapsulate each other's ciphertexts both ways, and skchat/skcomms negotiate a hybrid post-quantum DM in the browser — verified end-to-end over Chrome DevTools Protocol.</p>
+  </section>
+
+  <!-- BENCHMARKS -->
+  <section id="bench">
+    <h2>Benchmarks <span class="tick">— sub-millisecond, no GPU</span></h2>
+    <p class="lead">Whole-operation timings for the hybrid KEM — each call pays <strong>both</strong> the X25519 leg <em>and</em> the ML-KEM-768 leg plus the HKDF combiner, which is what a caller actually spends. Measured with <code>examples/bench.py</code> (<code>timeit</code>, 500 iters × 5 batches, median per call) on a commodity x86-64 desktop, no GPU.</p>
+    <div class="bench">
+      <table>
+        <caption>Python 3.12 · Linux x86-64 · suite <code>x25519-mlkem768</code> · median per call</caption>
+        <thead>
+          <tr><th>op</th><th>median</th><th>mean</th><th>ops/sec</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="op">keygen</td><td class="big">~226 µs</td><td>279 µs</td><td>~4,400</td></tr>
+          <tr><td class="op">encap</td><td class="big">~360 µs</td><td>512 µs</td><td>~2,800</td></tr>
+          <tr><td class="op">decap</td><td class="big">~341 µs</td><td>416 µs</td><td>~2,900</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="lead">The ML-KEM-768 leg dominates over X25519, and the whole thing still clears in well under a millisecond. These are <strong>machine-specific</strong> — <em>reproduce on your own hardware</em>:</p>
+    <pre class="code"><span class="c"># Python — pip install "sk-pqc[pq]"</span>
+python examples/bench.py            <span class="c"># 200 iters (default)</span>
+python examples/bench.py 1000       <span class="c"># custom iteration count</span></pre>
+    <p class="lead" style="margin-top:1rem">And it is paid <strong>once per epoch</strong>, not per message: the DM and group ratchets distribute one hybrid-KEM-wrapped epoch secret, then derive every per-message key symmetrically off it. The ~1.1 KB ciphertext and the microseconds above amortise across a whole conversation epoch.</p>
+  </section>
+
+  <!-- SINGLE CORE / FFI -->
+  <section id="core">
+    <h2>One core, many bindings <span class="tick">— write the crypto once</span></h2>
+    <p class="lead">Three hand-written copies of a security-critical key schedule is three places to silently drift. The direction is a <strong>single audited Rust core</strong> — pure Rust (<code>ml-kem</code> + <code>x25519-dalek</code>, <em>no OpenSSL, no liboqs</em>) — surfaced to every other language over FFI, so there is one place the crypto actually lives.</p>
+    <div class="pipeline">
+      <div class="core">🦀 sk-pqc-rs<br><small style="font-weight:400">pure-Rust core · 9 modules · 99 in-tree tests</small></div>
+      <div class="pipe-arrow">→</div>
+      <div class="fan">
+        <div class="binding"><b>🐍 Python — PyO3</b><span class="st ok">✓ proven · abi3 wheel, cross-parity-tested vs pure-Python sk_pqc (both directions)</span></div>
+        <div class="binding"><b>🎯 Dart — flutter_rust_bridge</b><span class="st wip">⟳ in progress · today's Dart ratchet is a thin bridge, validated on the same KAT, slated to become a shim over the core</span></div>
+      </div>
+    </div>
+    <p class="lead" style="margin-top:1.2rem">Because the core is pure Rust, the Python wheel links clean — no system OpenSSL, no liboqs to ship. The PyO3 feature is <strong>off by default</strong>, so <code>cargo test</code> stays pure-Rust and crates.io sees a dependency-clean crate; the Python services opt in to being backed by the same audited core the Rust clients use. Until the Dart FFI lands, the Dart package keeps a deliberately <strong>thin, clearly-marked</strong> ratchet port (and binds vetted <code>@noble/post-quantum</code> on web, liboqs on native for the ML-KEM leg) — pinned to the identical cross-language vectors so it cannot drift unnoticed.</p>
+    <div class="facts">
+      <div class="fact"><div class="n">1</div><div class="l">audited-dependency core</div></div>
+      <div class="fact"><div class="n">PyO3</div><div class="l">Python binding — proven</div></div>
+      <div class="fact"><div class="n">frb</div><div class="l">Dart binding — in progress</div></div>
+      <div class="fact"><div class="n">0</div><div class="l">hand-rolled primitives</div></div>
+    </div>
+  </section>
+
   <!-- HONEST -->
   <section id="honest">
     <h2>What it is — and what it isn't</h2>
@@ -159,6 +282,34 @@
         </ul>
       </div>
     </div>
+  </section>
+
+  <!-- THREAT MODEL -->
+  <section id="threat">
+    <h2>Threat model <span class="tick">— what -768 hybrid does &amp; doesn't stop</span></h2>
+    <p class="lead">The concrete adversary this is built against is <strong>harvest-now, decrypt-later (HNDL)</strong>: someone who records your ciphertext today and waits for a cryptographically-relevant quantum computer to break the classical key exchange later. Here is exactly where the line sits.</p>
+    <div class="claims">
+      <div class="claim is">
+        <h3>What the <code>-768</code> hybrid protects</h3>
+        <ul>
+          <li><strong>HNDL on confidentiality</strong> — recorded traffic stays sealed: breaking X25519 later still leaves the ML-KEM-768 leg, so the derived secret holds</li>
+          <li><strong>Classical break today</strong> — a lattice surprise against ML-KEM still leaves X25519; you are covered if <em>either</em> leg holds</li>
+          <li><strong>Forward secrecy across epochs</strong> — the ratchet rekeys (50 msgs / 7 days); a compromised epoch secret doesn't unseal past or future epochs</li>
+          <li><strong>Symmetric crypto is already fine</strong> — AES-256-GCM is Grover-only and quantum-acceptable; the hard problem here is <em>key distribution</em>, which is what we address</li>
+        </ul>
+      </div>
+      <div class="claim isnt">
+        <h3>What it does <em>not</em></h3>
+        <ul>
+          <li><strong>No authentication</strong> — KEM only. Without PQ signatures (FIPS 204 ML-DSA, gated as future work) it doesn't prove <em>who</em> you're talking to; an active MITM is out of scope for the KEM alone</li>
+          <li><strong>Not CNSA-2.0</strong> — deliberately the <code>-768</code> tier (the internet default), not the level-5 <code>-1024</code> ceiling government suites mandate</li>
+          <li><strong>A classical-only ratchet is still HNDL-exposed</strong> — wrapping a <em>classical</em> KEM in a ratchet doesn't fix harvest-now; the self-report says so regardless of ratchet level</li>
+          <li><strong>Unaudited reference impl</strong> — no third-party audit, fuzzing, or formal review yet; the wiring is original even though every primitive is vetted</li>
+          <li><strong>Not endpoint security</strong> — it protects keys in transit, not a compromised device, a screenshot, or a bad RNG you feed it</li>
+        </ul>
+      </div>
+    </div>
+    <p class="lead" style="margin-top:1.2rem">The honest framing of "hybrid": confidential as long as <strong>either</strong> the classical X25519 leg <strong>or</strong> the post-quantum ML-KEM-768 leg is unbroken — never both required, never "quantum-proof." The <code>report</code> module mechanically rejects the words "quantum-proof", "quantum-safe", and "unbreakable" from any externally-visible note, and never marks a classical suite quantum-resistant. ML-KEM-768 is standardized as <strong>FIPS 203</strong>; the companion signature standard is <strong>FIPS 204</strong> (ML-DSA) — referenced, not yet implemented.</p>
   </section>
 
   <!-- USE IT -->
