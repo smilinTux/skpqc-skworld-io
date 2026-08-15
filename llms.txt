@@ -100,7 +100,9 @@ report module mechanically rejects those words.
 ## Links
 
 - Site: https://skpqc.skworld.io
-- Source: https://github.com/smilinTux/sk_pqc
+- Source (Python): https://github.com/smilinTux/sk-pqc-py
+- Source (Dart/Flutter): https://github.com/smilinTux/sk-pqc-dart
+- Source (Rust): https://github.com/smilinTux/sk-pqc-rs
 - License: Apache-2.0
 - Ecosystem: https://skworld.io (SKWorld quantum-resistance initiative)
 
