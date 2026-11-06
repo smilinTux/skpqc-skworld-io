@@ -64,6 +64,7 @@
       <a href="#matrix">Matrix</a>
       <a href="#bench">Bench</a>
       <a href="#core">Core</a>
+      <a href="#architecture">Architecture</a>
       <a href="#threat">Threat model</a>
       <a href="#use">Use it</a>
       <a href="https://github.com/smilinTux/sk-pqc-py">GitHub</a>
@@ -254,6 +255,19 @@ python examples/bench.py 1000       <span class="c"># custom iteration count</sp
       <div class="fact"><div class="n">frb</div><div class="l">Dart binding — in progress</div></div>
       <div class="fact"><div class="n">0</div><div class="l">hand-rolled primitives</div></div>
     </div>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section id="architecture">
+    <h2>Architecture <span class="tick">— one wire format, three implementations</span></h2>
+    <p class="lead">An explorable component map of the whole picture: an application embeds one of the three implementations, each implements the same hybrid KEM against the shared <code>x25519-mlkem768</code> wire format, and the Rust core's FFI bindings to Python and Dart. Opens in a new tab, with pan, zoom, and a dark/light toggle.</p>
+    <figure class="diagram-card">
+      <figcaption>
+        <span class="diagram-pill">Interactive</span>
+        Component map: Python, Rust, and Dart/Flutter, one shared wire format, the Rust-to-Python and Rust-to-Dart bindings.
+        <a href="diagrams/skpqc.architecture.html" target="_blank" rel="noopener">Open the interactive version ↗</a>
+      </figcaption>
+    </figure>
   </section>
 
   <!-- HONEST -->
