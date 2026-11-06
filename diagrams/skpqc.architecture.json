@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "sk_pqc Component Map",
+    "subtitle": "One hybrid X25519 + ML-KEM-768 wire format, three implementations, secure if either leg holds",
+    "output": "skpqc.architecture.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "app", "type": "external", "label": "Your application", "sublabel": "embeds one implementation", "pos": [40, 240], "size": [170, 64] },
+    { "id": "py", "type": "backend", "label": "Python", "sublabel": "pip install sk-pqc", "pos": [360, 40], "size": [190, 64] },
+    { "id": "rs", "type": "backend", "label": "Rust", "sublabel": "cargo add sk-pqc, pure-Rust core", "pos": [360, 240], "size": [190, 64] },
+    { "id": "dart", "type": "frontend", "label": "Dart / Flutter", "sublabel": "dart pub add sk_pqc", "pos": [360, 440], "size": [190, 64] },
+    { "id": "wire", "type": "security", "label": "x25519-mlkem768 wire format", "sublabel": "FIPS 203 ML-KEM-768 + X25519, HKDF-SHA256 combiner", "pos": [720, 240], "size": [230, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Three sk_pqc implementations, same wire format", "wraps": ["py", "rs", "dart"], "pad": 28 }
+  ],
+  "connections": [
+    { "id": "app-to-py", "from": "app", "to": "py", "label": "embeds (pick one)", "variant": "dashed" },
+    { "id": "app-to-rs", "from": "app", "to": "rs", "label": "embeds (pick one)", "variant": "dashed" },
+    { "id": "app-to-dart", "from": "app", "to": "dart", "label": "embeds (pick one)", "variant": "dashed" },
+    { "id": "py-to-wire", "from": "py", "to": "wire", "label": "implements hybrid KEM", "variant": "default" },
+    { "id": "rs-to-wire", "from": "rs", "to": "wire", "label": "implements hybrid KEM", "variant": "default" },
+    { "id": "dart-to-wire", "from": "dart", "to": "wire", "label": "implements hybrid KEM", "variant": "default" },
+    { "id": "rs-to-py", "from": "rs", "to": "py", "label": "PyO3 binding, cross-parity proven", "variant": "emphasis" },
+    { "id": "rs-to-dart", "from": "rs", "to": "dart", "label": "flutter_rust_bridge, in progress", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "amber", "title": "Experimental and unaudited", "items": ["No third-party security audit, fuzzing, or formal review yet", "Binds vetted primitive libraries: liboqs, noble-post-quantum, pyca cryptography", "The only original crypto is the HKDF-SHA256 combiner"] },
+    { "dot": "cyan", "title": "Secure if either leg holds", "items": ["HKDF-SHA256(X25519_ss concatenated with ML-KEM-768_ss), concatenate-then-KDF, never XOR, never pure-PQ", "A break of either leg alone still leaves the other", "Never call this quantum-proof, quantum-safe, or unbreakable"] },
+    { "dot": "emerald", "title": "One core, many bindings", "items": ["Direction: one audited pure-Rust core, surfaced to other languages over FFI", "Python binding (PyO3) is proven and cross-parity tested both directions", "Dart binding (flutter_rust_bridge) is in progress; today's Dart ratchet is a thin, clearly marked bridge pinned to the same test vectors"] }
+  ]
+}
